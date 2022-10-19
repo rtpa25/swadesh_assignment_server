@@ -21,5 +21,7 @@ export async function updateTransactionById(id: string, newStatus: 'success') {
 }
 
 export async function findTransactionsByUserId(userId: string) {
-  return TransactionModel.find({ user: userId });
+  return TransactionModel.find({ user: userId }).sort({
+    createdAt: 'descending',
+  });
 }

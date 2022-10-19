@@ -1,7 +1,6 @@
 //@dependencies
 import 'dotenv/config';
 import express from 'express';
-import helmet from 'helmet';
 
 //@utils
 import { connectToDB } from './utils/connect.util';
@@ -12,14 +11,6 @@ import userRouter from './routes/user.route';
 import transactionRouter from './routes/transaction.route';
 
 const app = express();
-
-app.set('trust proxy', 1);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-  })
-);
 
 app.use(express.json());
 

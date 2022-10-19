@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { oneMinuteInMilliseconds } from '../utils/constants.util';
 import { UserDocument } from '../modules/user.model';
 import {
   createTransaction,
@@ -10,6 +9,7 @@ import {
   updateAdminBalance,
   updateUserById,
 } from '../services/user.service';
+import { oneMinuteInMilliseconds } from '../utils/constants.util';
 import { logger } from '../utils/logger.util';
 
 interface CreateTransactionInput {
@@ -100,8 +100,8 @@ export async function createTransactionHandler(
         user,
       });
 
-      await updateUserById(user, amount, type); //increase the user balance
-      await updateAdminBalance(amount, type); //decrease the admin balance
+      await updateUserById(user, amount, type); //decrease the user balance
+      await updateAdminBalance(amount, type); //increase the admin balance
 
       return res.status(201).send(transaction);
     }
