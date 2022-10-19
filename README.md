@@ -8,7 +8,14 @@ This is the server of the Assignment. It is an express server with Typescript an
 - fetch user with UUID
 - create transaction with all given validations and constraints  
 - fetch all the transactions of a certain user
-  
+
+## Important
+
+in case you do not have a mongoDB server running on your local machine then add a .env file in the root directory of the server and add the following lines
+
+    DB_URI="mongodb+srv://ronit:ronit0123@portfolio-projects.nxiqubj.mongodb.net/swadesh?retryWrites=true&w=majority"
+    ADMIN_USER_ID="admin"
+
 ## Local Setup
 
     yarn 
