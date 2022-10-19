@@ -30,7 +30,7 @@ export async function createTransactionHandler(
       return res.status(400).send('Amount cannot be negative');
     }
 
-    //case where the credited amount is more than 1000 <CANCELLED>
+    /*----------  CREDITED AMOUNT > 1000 <CANCELLED>  ----------*/
     if (amount > 1000 && type === 'credit') {
       const transaction = await createTransaction({
         amount,
@@ -41,7 +41,7 @@ export async function createTransactionHandler(
       return res.status(201).send(transaction);
     }
 
-    //case where the credited amount is less than 500 <SUCCESS after a minute>
+    /*----------  CREDITED AMOUNT < 500 <SUCCESS after a minute> ----------*/
     if (amount <= 500 && type === 'credit') {
       const transaction = await createTransaction({
         amount,
@@ -62,7 +62,7 @@ export async function createTransactionHandler(
       return res.status(201).send(transaction);
     }
 
-    //case where the credited amount is less than 1000 <SUCCESS after a 5 minute>
+    /*---------- 1000 > CREDITED AMOUNT > 500 <SUCCESS after 5 minutes> ----------*/
     if (amount <= 1000 && amount > 500 && type === 'credit') {
       const transaction = await createTransaction({
         amount,
@@ -83,7 +83,7 @@ export async function createTransactionHandler(
       return res.status(201).send(transaction);
     }
 
-    //case where the amount is debited from user's account <SUCCESS>
+    /*---------- DEBIT ----------*/
     if (type === 'debit') {
       const currentUser = await findUserById(user);
       if (currentUser) {
@@ -104,6 +104,8 @@ export async function createTransactionHandler(
       await updateAdminBalance(amount, type); //increase the admin balance
 
       return res.status(201).send(transaction);
+    } else {
+      return res.status(500).send('should never come here');
     }
   } catch (error) {
     logger.error(error);
