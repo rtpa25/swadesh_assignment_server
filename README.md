@@ -22,6 +22,7 @@ in case you do not have a mongoDB server running on your local machine then add 
     yarn dev
 
 this will install all the dependencies and start the server on [localhost:8080](http://localhost:8080).
+Then we need to create the admin user and set there balance to 1000000. To do that we need to go to <http://localhost:8080/api/users> and add a record with uuid as "admin" and update the balance to "1000000" (you can use postman for this).
 
 ## Extra features that I can add
 
