@@ -25,3 +25,7 @@ export async function findTransactionsByUserId(userId: string) {
     createdAt: 'descending',
   });
 }
+
+export async function deleteTransaction(id: string) {
+  return TransactionModel.findByIdAndDelete(id);
+}

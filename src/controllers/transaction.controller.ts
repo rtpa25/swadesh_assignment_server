@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserDocument } from '../modules/user.model';
 import {
   createTransaction,
+  deleteTransaction,
   findTransactionsByUserId,
 } from '../services/transaction.service';
 import {
@@ -121,6 +122,20 @@ export async function getAllTransactionByUserIdHandler(
     const { userId } = req.query;
     const transactions = await findTransactionsByUserId(userId);
     return res.status(200).send(transactions);
+  } catch (error) {
+    logger.error(error);
+    return res.status(500).send(error.message);
+  }
+}
+
+export async function deleteTransactionHandler(
+  req: Request<{}, {}, { id: string }>,
+  res: Response
+) {
+  try {
+    const { id } = req.body;
+    const transaction = await deleteTransaction(id);
+    return res.status(200).send(transaction);
   } catch (error) {
     logger.error(error);
     return res.status(500).send(error.message);
