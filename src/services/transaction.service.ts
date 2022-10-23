@@ -29,7 +29,9 @@ export async function findTransactionsByUserId(
   if (sort && filter) {
     switch (sort) {
       case SortBy.amountHtoL:
-        return TransactionModel.find({ user: userId })
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        })
           .where({
             type:
               filter === FilterBy.All
@@ -41,7 +43,9 @@ export async function findTransactionsByUserId(
           });
 
       case SortBy.amountLtoH:
-        return TransactionModel.find({ user: userId })
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        })
           .where({
             type:
               filter === FilterBy.All
@@ -52,7 +56,9 @@ export async function findTransactionsByUserId(
             amount: 'asc',
           });
       case SortBy.dateLtoH:
-        return TransactionModel.find({ user: userId })
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        })
           .where({
             type:
               filter === FilterBy.All
@@ -66,27 +72,37 @@ export async function findTransactionsByUserId(
   } else if (sort && !filter) {
     switch (sort) {
       case SortBy.amountHtoL:
-        return TransactionModel.find({ user: userId }).sort({
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        }).sort({
           amount: 'desc',
         });
       case SortBy.amountLtoH:
-        return TransactionModel.find({ user: userId }).sort({
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        }).sort({
           amount: 'asc',
         });
       case SortBy.dateLtoH:
-        return TransactionModel.find({ user: userId }).sort({
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        }).sort({
           createdAt: 'asc',
         });
     }
   } else if (!sort && filter) {
-    return TransactionModel.find({ user: userId }).where({
+    return TransactionModel.find({
+      $or: [{ receiver: userId }, { sender: userId }],
+    }).where({
       type:
         filter === FilterBy.All
           ? { $in: ['credit', 'debit', 'transfer'] }
           : filter,
     });
   } else {
-    return TransactionModel.find({ user: userId }).sort({
+    return TransactionModel.find({
+      $or: [{ receiver: userId }, { sender: userId }],
+    }).sort({
       createdAt: 'desc',
     });
   }
