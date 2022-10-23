@@ -2,7 +2,7 @@ import { DocumentDefinition } from 'mongoose';
 import {
   TransactionDocument,
   TransactionModel,
-} from '../modules/transaction.model';
+} from '../models/transaction.model';
 
 export async function createTransaction(
   input: DocumentDefinition<
