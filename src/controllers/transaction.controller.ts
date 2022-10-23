@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { FilterBy, SortBy } from 'src/types/transactionFilter.types';
 import { UserDocument } from '../models/user.model';
 import {
   createTransaction,
@@ -113,6 +114,7 @@ export async function createTransactionHandler(
       return res.status(201).send(transaction);
     }
 
+    /*---------- TRANSFER ----------*/
     if (type === 'transfer') {
       const currentUser = await findUserById(sender);
       if (currentUser) {
@@ -143,12 +145,17 @@ export async function createTransactionHandler(
 }
 
 export async function getAllTransactionByUserIdHandler(
-  req: Request<{}, {}, {}, { userId: string }>,
+  req: Request<
+    {},
+    {},
+    {},
+    { userId: string; sort?: SortBy; filter?: FilterBy }
+  >,
   res: Response
 ) {
   try {
-    const { userId } = req.query;
-    const transactions = await findTransactionsByUserId(userId);
+    const { userId, sort, filter } = req.query;
+    const transactions = await findTransactionsByUserId(userId, sort, filter);
     return res.status(200).send(transactions);
   } catch (error) {
     logger.error(error);
