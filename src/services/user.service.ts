@@ -13,15 +13,22 @@ export async function findUserById(id: string) {
   return UserModel.findById(id);
 }
 
-export async function updateUserById(
-  id: string,
-  amount: number,
-  type: 'credit' | 'debit'
-) {
+interface UpdateUserByIdParams {
+  amount: number;
+  type: 'credit' | 'debit' | 'transfer';
+  sender?: string;
+  receiver?: string;
+}
+
+export async function updateUserById(input: UpdateUserByIdParams) {
+  const { amount, type, receiver, sender } = input;
   if (type === 'credit') {
-    return UserModel.updateOne({ _id: id }, { $inc: { balance: amount } });
+    await UserModel.updateOne({ _id: receiver }, { $inc: { balance: amount } });
+  } else if (type === 'debit') {
+    await UserModel.updateOne({ _id: sender }, { $inc: { balance: -amount } });
   } else {
-    return UserModel.updateOne({ _id: id }, { $inc: { balance: -amount } });
+    await UserModel.updateOne({ _id: sender }, { $inc: { balance: -amount } });
+    await UserModel.updateOne({ _id: receiver }, { $inc: { balance: amount } });
   }
 }
 

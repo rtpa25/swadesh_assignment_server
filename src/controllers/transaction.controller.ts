@@ -10,14 +10,15 @@ import {
   updateAdminBalance,
   updateUserById,
 } from '../services/user.service';
-import { oneMinuteInMilliseconds } from '../utils/constants.util';
+import { oneMinuteInMilliseconds, adminUserId } from '../utils/constants.util';
 import { logger } from '../utils/logger.util';
 
 interface CreateTransactionInput {
   amount: number;
-  user: UserDocument['_id'];
+  receiver?: UserDocument['_id'];
+  sender?: UserDocument['_id'];
   status: 'pending' | 'success' | 'cancelled' | 'created';
-  type: 'debit' | 'credit';
+  type: 'debit' | 'credit' | 'transfer';
 }
 
 export async function createTransactionHandler(
@@ -25,7 +26,7 @@ export async function createTransactionHandler(
   res: Response
 ) {
   try {
-    const { amount, type, user } = req.body;
+    const { amount, type, receiver, sender } = req.body;
 
     if (amount < 0) {
       return res.status(400).send('Amount cannot be negative');
@@ -37,7 +38,8 @@ export async function createTransactionHandler(
         amount,
         status: 'cancelled',
         type,
-        user,
+        receiver,
+        sender: adminUserId,
       });
       return res.status(201).send(transaction);
     }
@@ -48,10 +50,11 @@ export async function createTransactionHandler(
         amount,
         status: 'pending',
         type,
-        user,
+        receiver,
+        sender: adminUserId,
       });
 
-      await updateUserById(user, amount, type); //increase the user balance
+      await updateUserById({ amount, type, receiver }); //increase the user balance
       await updateAdminBalance(amount, type); //decrease the admin balance
 
       //artificial delay of 1 minute
@@ -69,10 +72,11 @@ export async function createTransactionHandler(
         amount,
         status: 'pending',
         type,
-        user,
+        receiver,
+        sender: adminUserId,
       });
 
-      await updateUserById(user, amount, type); //increase the user balance
+      await updateUserById({ amount, type, receiver }); //increase the user balance
       await updateAdminBalance(amount, type); //decrease the admin balance
 
       //artificial delay of 5 minute
@@ -86,7 +90,8 @@ export async function createTransactionHandler(
 
     /*---------- DEBIT ----------*/
     if (type === 'debit') {
-      const currentUser = await findUserById(user);
+      if (!sender) return;
+      const currentUser = await findUserById(sender);
       if (currentUser) {
         //case where the user wants to debit more than his current balance <CANCELLED>
         if (currentUser?.balance < amount) {
@@ -98,15 +103,38 @@ export async function createTransactionHandler(
         amount,
         status: 'success',
         type,
-        user,
+        sender,
+        receiver: adminUserId,
       });
 
-      await updateUserById(user, amount, type); //decrease the user balance
+      await updateUserById({ amount, type, sender }); //increase the user balance
       await updateAdminBalance(amount, type); //increase the admin balance
 
       return res.status(201).send(transaction);
+    }
+
+    if (type === 'transfer') {
+      const currentUser = await findUserById(sender);
+      if (currentUser) {
+        //case where the user wants to transfer more than his current balance <CANCELLED>
+        if (currentUser?.balance < amount) {
+          return res.status(400).send('Insufficient balance');
+        }
+      }
+
+      const transaction = await createTransaction({
+        amount,
+        status: 'success',
+        type,
+        sender,
+        receiver,
+      });
+
+      await updateUserById({ amount, type, receiver, sender }); //update both user balances
+
+      return res.status(201).send(transaction);
     } else {
-      return res.status(500).send('should never come here');
+      return res.status(400).send('should never come here');
     }
   } catch (error) {
     logger.error(error);
