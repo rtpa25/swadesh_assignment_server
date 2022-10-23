@@ -1,4 +1,5 @@
 import { DocumentDefinition } from 'mongoose';
+import { SortBy, FilterBy } from '../types/transactionFilter.types';
 import {
   TransactionDocument,
   TransactionModel,
@@ -20,10 +21,75 @@ export async function updateTransactionById(id: string, newStatus: 'success') {
   return TransactionModel.findByIdAndUpdate(id, { status: newStatus });
 }
 
-export async function findTransactionsByUserId(userId: string) {
-  return TransactionModel.find({ user: userId }).sort({
-    createdAt: 'descending',
-  });
+export async function findTransactionsByUserId(
+  userId: string,
+  sort?: SortBy,
+  filter?: FilterBy
+) {
+  if (sort && filter) {
+    switch (sort) {
+      case SortBy.amountHtoL:
+        return TransactionModel.find({ user: userId })
+          .where({
+            type:
+              filter === FilterBy.All
+                ? { $in: ['credit', 'debit', 'transfer'] }
+                : filter,
+          })
+          .sort({
+            amount: 'desc',
+          });
+
+      case SortBy.amountLtoH:
+        return TransactionModel.find({ user: userId })
+          .where({
+            type:
+              filter === FilterBy.All
+                ? { $in: ['credit', 'debit', 'transfer'] }
+                : filter,
+          })
+          .sort({
+            amount: 'asc',
+          });
+      case SortBy.dateLtoH:
+        return TransactionModel.find({ user: userId })
+          .where({
+            type:
+              filter === FilterBy.All
+                ? { $in: ['credit', 'debit', 'transfer'] }
+                : filter,
+          })
+          .sort({
+            createdAt: 'asc',
+          });
+    }
+  } else if (sort && !filter) {
+    switch (sort) {
+      case SortBy.amountHtoL:
+        return TransactionModel.find({ user: userId }).sort({
+          amount: 'desc',
+        });
+      case SortBy.amountLtoH:
+        return TransactionModel.find({ user: userId }).sort({
+          amount: 'asc',
+        });
+      case SortBy.dateLtoH:
+        return TransactionModel.find({ user: userId }).sort({
+          createdAt: 'asc',
+        });
+    }
+  } else if (!sort && filter) {
+    return TransactionModel.find({ user: userId }).where({
+      type:
+        filter === FilterBy.All
+          ? { $in: ['credit', 'debit', 'transfer'] }
+          : filter,
+    });
+  } else {
+    return TransactionModel.find({ user: userId }).sort({
+      createdAt: 'desc',
+    });
+  }
 }
 
 export async function deleteTransaction(id: string) {
