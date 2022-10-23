@@ -1,5 +1,5 @@
 import { adminUserUuid } from '../utils/constants.util';
-import { UserModel } from '../modules/user.model';
+import { UserModel } from '../models/user.model';
 
 export async function createUser(uuid: string) {
   return UserModel.create({ uuid });

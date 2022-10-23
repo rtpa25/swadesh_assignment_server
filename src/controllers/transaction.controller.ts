@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { UserDocument } from '../modules/user.model';
+import { UserDocument } from '../models/user.model';
 import {
   createTransaction,
   deleteTransaction,
@@ -10,7 +10,7 @@ import {
   updateAdminBalance,
   updateUserById,
 } from '../services/user.service';
-import { oneMinuteInMilliseconds, adminUserId } from '../utils/constants.util';
+import { adminUserId, oneMinuteInMilliseconds } from '../utils/constants.util';
 import { logger } from '../utils/logger.util';
 
 interface CreateTransactionInput {
