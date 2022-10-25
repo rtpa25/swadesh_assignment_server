@@ -68,6 +68,19 @@ export async function findTransactionsByUserId(
           .sort({
             createdAt: 'asc',
           });
+      case SortBy.dateHtoL:
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        })
+          .where({
+            type:
+              filter === FilterBy.All
+                ? { $in: ['credit', 'debit', 'transfer'] }
+                : filter,
+          })
+          .sort({
+            createdAt: 'desc',
+          });
     }
   } else if (sort && !filter) {
     switch (sort) {
@@ -88,6 +101,12 @@ export async function findTransactionsByUserId(
           $or: [{ receiver: userId }, { sender: userId }],
         }).sort({
           createdAt: 'asc',
+        });
+      case SortBy.dateHtoL:
+        return TransactionModel.find({
+          $or: [{ receiver: userId }, { sender: userId }],
+        }).sort({
+          createdAt: 'desc',
         });
     }
   } else if (!sort && filter) {
