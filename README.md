@@ -6,7 +6,7 @@ This is the server of the Assignment. It is an express server with Typescript an
 
 - add user with unique UUID
 - fetch user with UUID
-- create transaction with all given validations and constraints 
+- create transaction with all given validations and constraints
 - credit money from admin, Debit money to admin & Transfer money to other users.
 - sort and Filter transactions by date, amount, type.
 - fetch all the transactions of a certain user
