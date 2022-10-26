@@ -5,7 +5,7 @@ export interface TransactionDocument extends mongoose.Document {
   amount: number;
   sender: UserDocument['_id'];
   receiver: UserDocument['_id'];
-  status: 'pending' | 'success' | 'cancelled' | 'created';
+  status: 'pending' | 'success' | 'cancelled' | 'created' | 'failed';
   type: 'debit' | 'credit' | 'transfer';
   createdAt: Date;
   updatedAt: Date;

@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import {
-  createTransactionHandler,
+  createCreditTransactionHandler,
+  createDebitTransactionHandler,
+  createTransferTransactionHandler,
   deleteTransactionHandler,
   getAllTransactionByUserIdHandler,
 } from '../controllers/transaction.controller';
 
 const router = Router();
 
-router.post('/', createTransactionHandler);
+router.post('/credit', createCreditTransactionHandler);
+router.post('/debit', createDebitTransactionHandler);
+router.post('/transfer', createTransferTransactionHandler);
+
 router.get('/', getAllTransactionByUserIdHandler);
 router.delete('/', deleteTransactionHandler);
 

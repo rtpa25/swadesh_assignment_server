@@ -22,19 +22,58 @@ interface CreateTransactionInput {
   type: 'debit' | 'credit' | 'transfer';
 }
 
-export async function createTransactionHandler(
+export async function createDebitTransactionHandler(
   req: Request<{}, {}, CreateTransactionInput>,
   res: Response
 ) {
   try {
-    const { amount, type, receiver, sender } = req.body;
+    const { amount, type, sender } = req.body;
+
+    if (amount < 0) {
+      return res.status(400).send('Amount cannot be negative');
+    }
+
+    if (!sender) return;
+
+    const currentUser = await findUserById(sender);
+    if (currentUser) {
+      //case where the user wants to debit more than his current balance <CANCELLED>
+      if (currentUser?.balance < amount) {
+        return res.status(400).send('Insufficient balance');
+      }
+    }
+
+    const transaction = await createTransaction({
+      amount,
+      status: 'success',
+      type,
+      sender,
+      receiver: adminUserId,
+    });
+
+    await updateUserById({ amount, type: 'debit', sender }); //decrease the user balance
+    await updateAdminBalance(amount, 'debit'); //increase the admin balance
+
+    return res.status(201).send(transaction);
+  } catch (error) {
+    logger.error(error);
+    return res.status(500).send(error.message);
+  }
+}
+
+export async function createCreditTransactionHandler(
+  req: Request<{}, {}, CreateTransactionInput>,
+  res: Response
+) {
+  try {
+    const { amount, type, receiver } = req.body;
 
     if (amount < 0) {
       return res.status(400).send('Amount cannot be negative');
     }
 
     /*----------  CREDITED AMOUNT > 1000 <CANCELLED>  ----------*/
-    if (amount > 1000 && type === 'credit') {
+    if (amount > 1000) {
       const transaction = await createTransaction({
         amount,
         status: 'cancelled',
@@ -45,99 +84,70 @@ export async function createTransactionHandler(
       return res.status(201).send(transaction);
     }
 
-    /*----------  CREDITED AMOUNT < 500 <SUCCESS after a minute> ----------*/
-    if (amount <= 500 && type === 'credit') {
-      const transaction = await createTransaction({
-        amount,
-        status: 'pending',
-        type,
-        receiver,
-        sender: adminUserId,
-      });
+    const transaction = await createTransaction({
+      amount,
+      status: 'pending',
+      type,
+      receiver,
+      sender: adminUserId,
+    });
 
-      await updateUserById({ amount, type, receiver }); //increase the user balance
-      await updateAdminBalance(amount, type); //decrease the admin balance
+    await updateUserById({ amount, type: 'credit', receiver }); //increase the user balance
+    await updateAdminBalance(amount, 'credit'); //decrease the admin balance
 
-      //artificial delay of 1 minute
-      setTimeout(async () => {
-        transaction.status = 'success';
-        await transaction.save();
-      }, oneMinuteInMilliseconds);
-
-      return res.status(201).send(transaction);
-    }
-
-    /*---------- 1000 > CREDITED AMOUNT > 500 <SUCCESS after 5 minutes> ----------*/
-    if (amount <= 1000 && amount > 500 && type === 'credit') {
-      const transaction = await createTransaction({
-        amount,
-        status: 'pending',
-        type,
-        receiver,
-        sender: adminUserId,
-      });
-
-      await updateUserById({ amount, type, receiver }); //increase the user balance
-      await updateAdminBalance(amount, type); //decrease the admin balance
-
-      //artificial delay of 5 minute
-      setTimeout(async () => {
-        transaction.status = 'success';
-        await transaction.save();
-      }, oneMinuteInMilliseconds * 5);
-
-      return res.status(201).send(transaction);
-    }
-
-    /*---------- DEBIT ----------*/
-    if (type === 'debit') {
-      if (!sender) return;
-      const currentUser = await findUserById(sender);
-      if (currentUser) {
-        //case where the user wants to debit more than his current balance <CANCELLED>
-        if (currentUser?.balance < amount) {
-          return res.status(400).send('Insufficient balance');
+    //artificial delay of 1 minute
+    setTimeout(
+      async () => {
+        try {
+          transaction.status = 'success';
+          await transaction.save();
+        } catch (error) {
+          logger.error(error);
+          transaction.status = 'failed';
+          await transaction.save();
         }
-      }
+        //after this point the txn is successful
+      },
+      amount > 500 ? oneMinuteInMilliseconds * 5 : oneMinuteInMilliseconds
+    );
 
-      const transaction = await createTransaction({
-        amount,
-        status: 'success',
-        type,
-        sender,
-        receiver: adminUserId,
-      });
+    return res.status(201).send(transaction); //user fetched is pending
+  } catch (error) {
+    logger.error(error);
+    return res.status(500).send(error.message);
+  }
+}
 
-      await updateUserById({ amount, type, sender }); //increase the user balance
-      await updateAdminBalance(amount, type); //increase the admin balance
+export async function createTransferTransactionHandler(
+  req: Request<{}, {}, CreateTransactionInput>,
+  res: Response
+) {
+  try {
+    const { amount, type, receiver, sender } = req.body;
 
-      return res.status(201).send(transaction);
+    if (amount < 0) {
+      return res.status(400).send('Amount cannot be negative');
     }
 
-    /*---------- TRANSFER ----------*/
-    if (type === 'transfer') {
-      const currentUser = await findUserById(sender);
-      if (currentUser) {
-        //case where the user wants to transfer more than his current balance <CANCELLED>
-        if (currentUser?.balance < amount) {
-          return res.status(400).send('Insufficient balance');
-        }
+    const currentUser = await findUserById(sender);
+    if (currentUser) {
+      //case where the user wants to transfer more than his current balance <CANCELLED>
+      if (currentUser?.balance < amount) {
+        return res.status(400).send('Insufficient balance');
       }
-
-      const transaction = await createTransaction({
-        amount,
-        status: 'success',
-        type,
-        sender,
-        receiver,
-      });
-
-      await updateUserById({ amount, type, receiver, sender }); //update both user balances
-
-      return res.status(201).send(transaction);
-    } else {
-      return res.status(400).send('should never come here');
     }
+
+    const transaction = await createTransaction({
+      amount,
+      status: 'success',
+      type,
+      sender,
+      receiver,
+    });
+
+    await updateUserById({ amount, type, receiver, sender }); //update both user balances
+
+    return res.status(201).send(transaction);
   } catch (error) {
     logger.error(error);
     return res.status(500).send(error.message);
