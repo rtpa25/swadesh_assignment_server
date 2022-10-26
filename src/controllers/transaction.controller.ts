@@ -11,7 +11,10 @@ import {
   updateAdminBalance,
   updateUserById,
 } from '../services/user.service';
-import { adminUserId, oneMinuteInMilliseconds } from '../utils/constants.util';
+import {
+  adminUserId,
+  timeIntervalForCreditTransactions,
+} from '../utils/constants.util';
 import { logger } from '../utils/logger.util';
 
 interface CreateTransactionInput {
@@ -96,20 +99,18 @@ export async function createCreditTransactionHandler(
     await updateAdminBalance(amount, 'credit'); //decrease the admin balance
 
     //artificial delay of 1 minute
-    setTimeout(
-      async () => {
-        try {
-          transaction.status = 'success';
-          await transaction.save();
-        } catch (error) {
-          logger.error(error);
-          transaction.status = 'failed';
-          await transaction.save();
-        }
-        //after this point the txn is successful
-      },
-      amount > 500 ? oneMinuteInMilliseconds * 5 : oneMinuteInMilliseconds
-    );
+    setTimeout(async () => {
+      try {
+        transaction.status = 'success';
+        await transaction.save();
+      } catch (error) {
+        logger.error(error);
+        transaction.status = 'failed';
+        await transaction.save();
+      }
+      //after this point the txn is successful
+      timeIntervalForCreditTransactions(amount);
+    });
 
     return res.status(201).send(transaction); //user fetched is pending
   } catch (error) {
